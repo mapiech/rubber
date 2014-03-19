@@ -30,6 +30,7 @@ module Rubber
       end
 
       def create_instance(instance_alias, image_name, image_type, security_groups, availability_zone, region)
+
         do_region = compute_provider.regions.find { |r| r.name == region }
         if do_region.nil?
           raise "Invalid region for DigitalOcean: #{region}"
@@ -56,11 +57,17 @@ module Rubber
           end
         end
 
-        response = compute_provider.servers.create(:name => "#{Rubber.env}-#{instance_alias}",
+        additional = {
+            private_networking: @env['private_networking'],
+            backups_enabled: @env['backups_enabled'],
+
+        }
+
+        response = compute_provider.servers.create({:name => "#{Rubber.env}-#{instance_alias}",
                                                    :image_id => image.id,
                                                    :flavor_id => flavor.id,
                                                    :region_id => do_region.id,
-                                                   :ssh_key_ids => [ssh_key['id']])
+                                                   :ssh_key_ids => [ssh_key['id']]}.merge(additional))
 
         response.id
       end
